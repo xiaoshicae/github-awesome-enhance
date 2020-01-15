@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"github-awesome-enhance/spider"
 	"github-awesome-enhance/util/file"
+	"github-awesome-enhance/util/shell"
 	"net/http"
 	"strings"
 	"time"
 )
 
+// gitHubPageRepoDir
+var GitHubPageRepoDir = "/root/web/github-io-blog"
+
 // github awesome repos
 var AwesomeRepos = []string{
-	"sindresorhus/awesome",
+	//"sindresorhus/awesome",
 	"avelino/awesome-go",
 	"vinta/awesome-python",
 	"vuejs/awesome-vue",
@@ -27,11 +31,13 @@ var AwesomeRepoReadmeMap = map[string]string{}
 // LoadAwesomeContent
 func LoadAwesomeContent() {
 	// 加载markdown内容
+
 	go func() {
 		for _, userRepo := range AwesomeRepos {
 			s := strings.Split(userRepo, "/")
 			user, repo := s[0], s[1]
 			filePath := fmt.Sprintf("./awesome/readme/%s_README.md", user+"_"+repo)
+
 			// 1. 从本地加载markdown内容
 			markdownContent, ok := file.ReadFile(filePath)
 
@@ -44,13 +50,27 @@ func LoadAwesomeContent() {
 				markdownContent = spider.ParseFileContent(fileContent)
 
 				file.WriteFile(filePath, markdownContent)
+
+				// 同时写入github page 仓库中
+				githubPageFilePath := fmt.Sprintf("%s/public/awsome_readme/%s_README.md", GitHubPageRepoDir, user+"_"+repo)
+				file.WriteFile(githubPageFilePath, markdownContent)
 			}
 
 			if markdownContent != "" {
 				AwesomeRepoReadmeMap[userRepo] = markdownContent
 			}
 		}
+
+		// 发布github page
+		deployGitHubPages()
 	}()
+}
+
+func deployGitHubPages() {
+	cmd := fmt.Sprintf("cd %s && sh %s/deploy.sh", GitHubPageRepoDir, GitHubPageRepoDir)
+	fmt.Printf("cmd:  %s \n", cmd)
+	resp := shell.RunCmd(cmd)
+	fmt.Println(resp)
 }
 
 // RunTimedTask
@@ -59,12 +79,10 @@ func RunTimedTask() {
 
 	//定时任务
 	ticker := time.NewTicker(time.Hour * 12)
-	go func() {
-		for range ticker.C {
-			fmt.Println(fmt.Sprintf("Task begin at %s", time.Now().Format("2006-01-02 15:04:05")))
-			LoadAwesomeContent()
-		}
-	}()
+	for range ticker.C {
+		fmt.Println(fmt.Sprintf("Task begin at %s", time.Now().Format("2006-01-02 15:04:05")))
+		LoadAwesomeContent()
+	}
 }
 
 // RunHttpServer
@@ -81,7 +99,6 @@ func RunHttpServer() {
 		w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
 		w.Header().Set("content-type", "application/json")             //返回数据格式是json
 		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Content-Security-Policy", "upgrade-insecure-requests")
 		_, _ = w.Write(js)
 	})
 
@@ -98,5 +115,5 @@ func main() {
 	RunTimedTask()
 
 	// 启动http服务对外提供接口
-	RunHttpServer()
+	//RunHttpServer()
 }
