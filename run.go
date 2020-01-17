@@ -10,8 +10,9 @@ import (
 )
 
 // gitHubPageRepoDir
-//var GitHubPageRepoDir = "/root/web/github-io-blog"
-var GitHubPageRepoDir = "/Users/zhuangshui/VscodeProjects/FontendProjects/GitHubBlogFontend"
+var GitHubPageRepoDir = "/root/web/github-io-blog"
+
+//var GitHubPageRepoDir = "/Users/zhuangshui/VscodeProjects/FontendProjects/GitHubBlogFontend"
 
 // github awesome repos
 var AwesomeRepos = []string{
