@@ -63,7 +63,7 @@ func LoadAwesomeContent() {
 }
 
 func deployGitHubPages() {
-	cmd := fmt.Sprintf("cd %s && sh %s/deploy.sh", GitHubPageRepoDir, GitHubPageRepoDir)
+	cmd := fmt.Sprintf("cd %s && %s/deploy.sh", GitHubPageRepoDir, GitHubPageRepoDir)
 	fmt.Printf("cmd:  %s \n", cmd)
 	resp := shell.RunCmd(cmd)
 	fmt.Println(resp)
