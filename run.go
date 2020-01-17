@@ -1,18 +1,17 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github-awesome-enhance/spider"
 	"github-awesome-enhance/util/file"
 	"github-awesome-enhance/util/shell"
-	"net/http"
 	"strings"
 	"time"
 )
 
 // gitHubPageRepoDir
-var GitHubPageRepoDir = "/root/web/github-io-blog"
+//var GitHubPageRepoDir = "/root/web/github-io-blog"
+var GitHubPageRepoDir = "/Users/zhuangshui/VscodeProjects/FontendProjects/GitHubBlogFontend"
 
 // github awesome repos
 var AwesomeRepos = []string{
@@ -25,12 +24,10 @@ var AwesomeRepos = []string{
 	"justjavac/awesome-wechat-weapp",
 }
 
-// AwesomeRepoReadmeMap
-var AwesomeRepoReadmeMap = map[string]string{}
-
 // LoadAwesomeContent
 func LoadAwesomeContent() {
 	// 加载markdown内容
+	fmt.Println("load awesome content ...")
 
 	go func() {
 		for _, userRepo := range AwesomeRepos {
@@ -50,14 +47,12 @@ func LoadAwesomeContent() {
 				markdownContent = spider.ParseFileContent(fileContent)
 
 				file.WriteFile(filePath, markdownContent)
-
-				// 同时写入github page 仓库中
-				githubPageFilePath := fmt.Sprintf("%s/public/awsome_readme/%s_README.md", GitHubPageRepoDir, user+"_"+repo)
-				file.WriteFile(githubPageFilePath, markdownContent)
 			}
 
 			if markdownContent != "" {
-				AwesomeRepoReadmeMap[userRepo] = markdownContent
+				// 写入 github page 仓库中
+				githubPageFilePath := fmt.Sprintf("%s/public/awsome_readme/%s_README.md", GitHubPageRepoDir, user+"_"+repo)
+				file.WriteFile(githubPageFilePath, markdownContent)
 			}
 		}
 
@@ -76,44 +71,17 @@ func deployGitHubPages() {
 // RunTimedTask
 func RunTimedTask() {
 	fmt.Println("Starting timed  task ...")
+	LoadAwesomeContent()
 
 	//定时任务
-	ticker := time.NewTicker(time.Hour * 12)
+	ticker := time.NewTicker(time.Hour * 8)
 	for range ticker.C {
 		fmt.Println(fmt.Sprintf("Task begin at %s", time.Now().Format("2006-01-02 15:04:05")))
 		LoadAwesomeContent()
 	}
 }
 
-// RunHttpServer
-func RunHttpServer() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		js, err := json.Marshal(AwesomeRepoReadmeMap)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
-		w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
-		w.Header().Set("content-type", "application/json")             //返回数据格式是json
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(js)
-	})
-
-	fmt.Println("Starting http server ...")
-
-	_ = http.ListenAndServe(":5000", nil)
-}
-
 func main() {
-	// 加载awesome内存
-	LoadAwesomeContent()
-
 	// 启动定时任务刷新,内存内容
 	RunTimedTask()
-
-	// 启动http服务对外提供接口
-	//RunHttpServer()
 }
